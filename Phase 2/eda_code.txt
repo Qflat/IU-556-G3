@@ -1,0 +1,312 @@
+Output from phase 2 notebook (last cell):
+[LightGBM] [Info] Number of positive: 19876, number of negative: 226132
+[LightGBM] [Info] Auto-choosing row-wise multi-threading, the overhead of testing was 0.008410 seconds.
+You can set `force_row_wise=true` to remove the overhead.
+And if memory is not enough, you can set `force_col_wise=true`.
+[LightGBM] [Info] Total Bins 1801
+[LightGBM] [Info] Number of data points in the train set: 246008, number of used features: 43
+[LightGBM] [Info] [binary:BoostFromScore]: pavg=0.080794 -> initscore=-2.431606
+[LightGBM] [Info] Start training from score -2.431606
+
+
+Other python code from discussions - EDA (not recorded in notebook):
+POS_CASH_balance EDA:        pos = load_data("POS_CASH_balance", safe=True)
+ print("\n===== POS CASH BASIC INFO =====")
+pos.info()
+
+print("\n===== MISSING VALUES (Top 15) =====")
+display(pos.isnull().mean().sort_values(ascending=False).head(15))
+ # Contract status distribution
+if "NAME_CONTRACT_STATUS" in pos.columns:
+    plt.figure(figsize=(8,4))
+    sns.countplot(
+        data=pos,
+        x="NAME_CONTRACT_STATUS",
+        order=pos["NAME_CONTRACT_STATUS"].value_counts().index
+    )
+    plt.title("POS Cash Contract Status Distribution")
+    plt.tight_layout()
+    plt.show()
+
+# Months balance distribution
+if "MONTHS_BALANCE" in pos.columns:
+    plt.figure(figsize=(8,4))
+    sns.histplot(pos["MONTHS_BALANCE"], bins=40)
+    plt.title("MONTHS_BALANCE Distribution")
+    plt.tight_layout()
+    plt.show()
+ credit_card_balance EDA: ccb = load_data("credit_card_balance", safe=True)
+
+print("\n===== CREDIT CARD BASIC INFO =====")
+cb.info()
+ print("\n===== MISSING VALUES (Top 15) =====")
+display(ccb.isnull().mean().sort_values(ascending=False).head(15))
+
+# Key numeric columns
+numeric_cols = [
+    "AMT_BALANCE",
+    "AMT_CREDIT_LIMIT_ACTUAL",
+    "AMT_DRAWINGS_ATM_CURRENT",
+    "SK_DPD"
+
+ for col in numeric_cols:
+    if col in ccb.columns:
+        plt.figure(figsize=(8,4))
+        sns.histplot(ccb[col], bins=40)
+        plt.title(f"Distribution of {col}")
+        plt.tight_layout()
+        plt.show()
+
+# Months balance
+if "MONTHS_BALANCE" in ccb.columns:
+    plt.figure(figsize=(8,4))
+    sns.histplot(ccb["MONTHS_BALANCE"], bins=40)
+    plt.title("MONTHS_BALANCE Distribution")
+    plt.tight_layout()
+    plt.show()
+
+installments_payments EDA: ins = datasets["installments_payments"]
+ 
+print("===== installments_payments BASIC INFO =====")
+print(ins.shape)
+display(ins.head())
+ins.info()
+ 
+# Missing values
+missing_ins = ins.isnull().mean().sort_values(ascending=False)
+print("\nMissing (Top 20):")
+display(missing_ins.head(20))
+ 
+plt.figure(figsize=(10,4))
+missing_ins.head(15).plot(kind='bar')
+plt.title("installments_payments – Top Missing Columns")
+plt.tight_layout()
+plt.show()
+ 
+# Numeric distributions
+num_cols = ["AMT_INSTALMENT", "AMT_PAYMENT", "DAYS_ENTRY_PAYMENT"]
+ 
+for col in num_cols:
+    if col in ins.columns:
+        plt.figure(figsize=(10,4))
+        sns.histplot(ins[col], bins=50)
+        plt.title(f"Distribution of {col}")
+        plt.tight_layout()
+        plt.show()
+ 
+# Payment difference (important feature)
+if all(col in ins.columns for col in ["AMT_PAYMENT", "AMT_INSTALMENT"]):
+    ins["PAY_DIFF"] = ins["AMT_PAYMENT"] - ins["AMT_INSTALMENT"]
+ 
+    plt.figure(figsize=(10,4))
+    sns.histplot(ins["PAY_DIFF"], bins=80)
+    plt.title("PAY_DIFF (Positive = Overpayment, Negative = Underpayment)")
+    plt.tight_layout()
+    plt.show()
+ 
+# Safe correlation heatmap on small set
+num_subset = ins[["AMT_INSTALMENT", "AMT_PAYMENT", "PAY_DIFF"]]
+ 
+plt.figure(figsize=(6,4))
+sns.heatmap(num_subset.corr(), annot=True, cmap="coolwarm")
+plt.title("Correlation Heatmap (installments_payments)")
+plt.tight_layout()
+plt.show()
+
+previous_application EDA: import matplotlib.pyplot as plt
+import seaborn as sns
+ 
+prev = datasets["previous_application"]
+ 
+print("===== previous_application BASIC INFO =====")
+print(prev.shape)
+display(prev.head())
+prev.info()
+ 
+# Missing values
+print("\nMissing Values (Top 20):")
+missing_prev = prev.isnull().mean().sort_values(ascending=False)
+display(missing_prev.head(20))
+ 
+plt.figure(figsize=(10,4))
+missing_prev.head(15).plot(kind='bar')
+plt.title("previous_application – Top Missing Columns")
+plt.tight_layout()
+plt.show()
+ 
+# Categorical distributions
+categoricals = ["NAME_CONTRACT_TYPE", "NAME_CLIENT_TYPE", "NAME_CONTRACT_STATUS"]
+ 
+for col in categoricals:
+    if col in prev.columns:
+        plt.figure(figsize=(10,4))
+        sns.countplot(data=prev, x=col, order=prev[col].value_counts().index)
+        plt.title(f"Distribution of {col}")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+ 
+# Loan Amounts
+amt_cols = ["AMT_APPLICATION", "AMT_CREDIT", "AMT_ANNUITY"]
+ 
+for col in amt_cols:
+    if col in prev.columns:
+        plt.figure(figsize=(10,4))
+        sns.histplot(prev[col], bins=50)
+        plt.title(f"Distribution of {col}")
+        plt.tight_layout()
+        plt.show()
+ 
+# Time Features (safe)
+if "DAYS_DECISION" in prev.columns:
+    plt.figure(figsize=(10,4))
+    sns.histplot(prev["DAYS_DECISION"], bins=60)
+    plt.title("DAYS_DECISION (when previous loan was decided)")
+    plt.tight_layout()
+    plt.show()
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+bureau = datasets["bureau"]
+
+print("===== BUREAU: BASIC INFO =====")
+display(bureau.head())
+print(bureau.shape)
+bureau.info()
+ # ---------------- Missing Values ----------------
+missing = bureau.isna().mean().sort_values(ascending=False)
+display(missing.head(20))
+
+plt.figure(figsize=(10,4))
+missing.head(20).plot(kind="bar")
+plt.title("Bureau – Top Missing Columns")
+plt.tight_layout()
+plt.show()
+ # ---------------- Key Categorical Features ----------------
+categoricals = ["CREDIT_ACTIVE", "CREDIT_TYPE", "CREDIT_CURRENCY"]
+
+for col in categoricals:
+    if col in bureau.columns:
+        plt.figure(figsize=(8,4))
+        sns.countplot(data=bureau, x=col, order=bureau[col].value_counts().index)
+        plt.title(f"Bureau – Distribution of {col}")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+       plt.show()
+ # ---------------- Days Credit ----------------
+plt.figure(figsize=(10,4))
+sns.histplot(bureau["DAYS_CREDIT"], bins=50)
+plt.title("Bureau – DAYS_CREDIT (How long ago the credit was opened)")
+plt.tight_layout()
+plt.show()
+
+# ---------------- Amounts ----------------
+mount_cols = ["AMT_CREDIT_SUM", "AMT_CREDIT_SUM_OVERDUE", "AMT_CREDIT_SUM_LIMIT"]
+ for col in amount_cols:
+    if col in bureau.columns:
+        plt.figure(figsize=(10,4))
+        sns.histplot(bureau[col], bins=50)
+        plt.title(f"Bureau – Distribution of {col}")
+        plt.tight_layout()
+        plt.show()
+
+# ---------------- Active vs Closed Credits ----------------
+if "CREDIT_ACTIVE" in bureau.columns:
+    plt.figure(figsize=(6,4))
+    sns.countplot(data=bureau, x="CREDIT_ACTIVE")
+    plt.title("Bureau – Active vs Closed Credits")
+    plt.tight_layout()
+   plt.show()
+ # ---------------- Aggregate by SK_ID_CURR ----------------
+grouped = bureau.groupby("SK_ID_CURR").agg({
+    "AMT_CREDIT_SUM": "sum",
+    "AMT_CREDIT_SUM_DEBT": "sum",
+    "AMT_CREDIT_SUM_LIMIT": "sum",
+    "AMT_CREDIT_SUM_OVERDUE": "sum",
+    "DAYS_CREDIT": "mean",
+})
+
+display(grouped.head())
+ Bureau_balance EDA code: bureau_balance = datasets["bureau_balance"]
+
+print("===== BUREAU_BALANCE: BASIC INFO =====")
+display(bureau_balance.head())
+print(bureau_balance.shape)
+ureau_balance.info()
+ # ---------------- Missing values ----------------
+missing_bb = bureau_balance.isna().mean().sort_values(ascending=False)
+display(missing_bb)
+
+# ---------------- Status distribution ----------------
+plt.figure(figsize=(10,4))
+sns.countplot(data=bureau_balance, x="STATUS", order=bureau_balance["STATUS"].value_counts().index)
+plt.title("Bureau Balance – STATUS Distribution")
+plt.tight_layout()
+plt.show()
+ # ---------------- Months balance distribution ----------------
+plt.figure(figsize=(10,4))
+sns.histplot(bureau_balance["MONTHS_BALANCE"], bins=50)
+plt.title("Bureau Balance – MONTHS_BALANCE Distribution")
+plt.tight_layout()
+plt.show()
+
+# ---------------- Status by Months ----------------
+plt.figure(figsize=(12,5))
+sns.boxplot(data=bureau_balance, x="STATUS", y="MONTHS_BALANCE")
+plt.title("Bureau Balance – MONTHS_BALANCE by STATUS")
+plt.tight_layout()
+plt.show()
+
+# ---------------- Aggregate by SK_ID_PREV (credit level aggregation) ----------------
+bb_agg = bureau_balance.groupby("SK_ID_PREV").agg({
+    "MONTHS_BALANCE": ["min", "max", "mean"],
+    "STATUS": lambda x: x.mode()[0]  # most common status
+})
+ display(bb_agg.head())
+
+previous_application EDA: import matplotlib.pyplot as plt
+import seaborn as sns 
+rev = datasets["previous_application"]
+ print("===== previous_application BASIC INFO =====")
+print(prev.shape)
+display(prev.head())
+prev.info()
+
+# Missing values
+print("\nMissing Values (Top 20):")
+missing_prev = prev.isnull().mean().sort_values(ascending=False)
+display(missing_prev.head(20))
+ plt.figure(figsize=(10,4))
+missing_prev.head(15).plot(kind='bar')
+plt.title("previous_application – Top Missing Columns")
+plt.tight_layout()
+plt.show()
+
+# Categorical distributions
+categoricals = ["NAME_CONTRACT_TYPE", "NAME_CLIENT_TYPE", "NAME_CONTRACT_STATUS"]
+ for col in categoricals:
+    if col in prev.columns:
+        plt.figure(figsize=(10,4))
+        sns.countplot(data=prev, x=col, order=prev[col].value_counts().index)
+        plt.title(f"Distribution of {col}")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+
+# Loan Amounts
+amt_cols = ["AMT_APPLICATION", "AMT_CREDIT", "AMT_ANNUITY"]
+ for col in amt_cols:
+    if col in prev.columns:
+        plt.figure(figsize=(10,4))
+        sns.histplot(prev[col], bins=50)
+        plt.title(f"Distribution of {col}")
+        plt.tight_layout()
+        plt.show()
+
+# Time Features (safe)
+if "DAYS_DECISION" in prev.columns:
+    plt.figure(figsize=(10,4))
+    sns.histplot(prev["DAYS_DECISION"], bins=60)
+    plt.title("DAYS_DECISION (when previous loan was decided)")
+    plt.tight_layout()
+    plt.show()
